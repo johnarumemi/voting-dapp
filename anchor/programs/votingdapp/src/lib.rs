@@ -11,20 +11,40 @@ pub const ANCHOR_DISCRIMINATOR: usize = 8;
 pub mod votingdapp {
     use super::*;
 
-    pub fn initialise_poll(ctx: Context<InitialisePoll>, _poll_id: u64) -> Result<()> {
+    pub fn initialise_poll(
+        ctx: Context<InitialisePoll>,
+        poll_id: u64,
+        poll_start: u64,
+        poll_end: u64,
+        description: String,
+    ) -> anchor_lang::Result<()> {
+        let poll = &mut ctx.accounts.poll;
+
+        // We write out initial state to this poll account.
+        poll.poll_id = poll_id;
+        poll.poll_start = poll_start;
+        poll.poll_end = poll_end;
+        poll.description = description;
+        poll.candidate_amount = 0;
+
+        // instruction completed successfully
         Ok(())
     }
 
+    /// List of accounts
     #[derive(Accounts)]
     #[instruction(poll_id: u64)] // pull in the paramer for use in seed
     pub struct InitialisePoll<'info> {
         // The signer
+        // Accessed via `ctx.accounts.signer`
         #[account(mut)] // we are getting money from the singer
         pub signer: Signer<'info>,
 
         // An account for the poll
+        //
+        // Accessed via `ctx.accounts.poll`
         #[account(
-            init,
+            init_if_needed,
             payer = signer,
             space = ANCHOR_DISCRIMINATOR + Poll::INIT_SPACE,
             seeds = [poll_id.to_le_bytes().as_ref()],

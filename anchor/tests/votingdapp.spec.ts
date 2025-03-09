@@ -1,76 +1,50 @@
+import { BankrunProvider } from "anchor-bankrun";
+// use import from solana-nakrun to get docstrings in IDE correctly
+import { startAnchor } from "solana-bankrun";
+import { BN, Program } from "@coral-xyz/anchor";
 import * as anchor from '@coral-xyz/anchor'
-import { Program } from '@coral-xyz/anchor'
-import { Keypair } from '@solana/web3.js'
+// import { Program } from '@coral-xyz/anchor'
+import { Keypair, PublicKey } from "@solana/web3.js";
+
+// Our Program type
 import { Votingdapp } from '../target/types/votingdapp'
 
-describe('votingdapp', () => {
-  // Configure the client to use the local cluster.
-  const provider = anchor.AnchorProvider.env()
-  anchor.setProvider(provider)
-  const payer = provider.wallet as anchor.Wallet
+// You can consider the IDL as defining the ABI for our program,
+// and containing information for how to call our Solana program.
+const IDL = require('../target/idl/votingdapp.json')
 
-  const program = anchor.workspace.Votingdapp as Program<Votingdapp>
+const votingAddress = new PublicKey("6ShErK8BErTwj4Wut88kkJVxBiSAXdSmUh3qhFAPzaiZ")
 
-  const votingdappKeypair = Keypair.generate()
+// Can now create the context and provider that allows us to interact with our
+// smart contract.
+//
+// see https://github.com/kevinheavey/anchor-bankrun for how to use this
+// testing framework to test our smart contracts.
+describe('Voting', () => {
 
-  it('Initialize Votingdapp', async () => {
-    await program.methods
-      .initialize()
-      .accounts({
-        votingdapp: votingdappKeypair.publicKey,
-        payer: payer.publicKey,
-      })
-      .signers([votingdappKeypair])
-      .rpc()
+    it('Initialise Poll', async () => {
 
-    const currentCount = await program.account.votingdapp.fetch(votingdappKeypair.publicKey)
+        // name must match the Program name. See Anchor.toml file for valid names.
+        const context = await startAnchor("", [{ name: "votingdapp", programId: votingAddress }], []);
 
-    expect(currentCount.count).toEqual(0)
-  })
+        const provider = new BankrunProvider(context);
 
-  it('Increment Votingdapp', async () => {
-    await program.methods.increment().accounts({ votingdapp: votingdappKeypair.publicKey }).rpc()
+        const votingProgram = new Program<Votingdapp>(
+            IDL,
+            provider,
+        );
 
-    const currentCount = await program.account.votingdapp.fetch(votingdappKeypair.publicKey)
+        // represent a u65 using BN (Big Number)
+        const tx = await votingProgram.methods.initialisePoll(
+            new BN(1),
+            new BN(0),
+            new BN(1841543877),
+            "What is your favourte colour?",
+        )
+            // Will call the initialisePoll method on the smart contract
+            .rpc();
 
-    expect(currentCount.count).toEqual(1)
-  })
+        console.log('Your transaction signature', tx);
+    }, 15000) // 15 seconds
 
-  it('Increment Votingdapp Again', async () => {
-    await program.methods.increment().accounts({ votingdapp: votingdappKeypair.publicKey }).rpc()
-
-    const currentCount = await program.account.votingdapp.fetch(votingdappKeypair.publicKey)
-
-    expect(currentCount.count).toEqual(2)
-  })
-
-  it('Decrement Votingdapp', async () => {
-    await program.methods.decrement().accounts({ votingdapp: votingdappKeypair.publicKey }).rpc()
-
-    const currentCount = await program.account.votingdapp.fetch(votingdappKeypair.publicKey)
-
-    expect(currentCount.count).toEqual(1)
-  })
-
-  it('Set votingdapp value', async () => {
-    await program.methods.set(42).accounts({ votingdapp: votingdappKeypair.publicKey }).rpc()
-
-    const currentCount = await program.account.votingdapp.fetch(votingdappKeypair.publicKey)
-
-    expect(currentCount.count).toEqual(42)
-  })
-
-  it('Set close the votingdapp account', async () => {
-    await program.methods
-      .close()
-      .accounts({
-        payer: payer.publicKey,
-        votingdapp: votingdappKeypair.publicKey,
-      })
-      .rpc()
-
-    // The account should no longer exist, returning null.
-    const userAccount = await program.account.votingdapp.fetchNullable(votingdappKeypair.publicKey)
-    expect(userAccount).toBeNull()
-  })
 })

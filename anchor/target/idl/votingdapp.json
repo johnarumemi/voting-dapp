@@ -47,8 +47,20 @@
       ],
       "args": [
         {
-          "name": "_poll_id",
+          "name": "poll_id",
           "type": "u64"
+        },
+        {
+          "name": "poll_start",
+          "type": "u64"
+        },
+        {
+          "name": "poll_end",
+          "type": "u64"
+        },
+        {
+          "name": "description",
+          "type": "string"
         }
       ]
     }
