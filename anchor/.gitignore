@@ -6,6 +6,7 @@ target/release
 target/sbf-solana-solana
 target/test-ledger
 target/.rustc_info.json
+target/ra-check
 **/*.rs.bk
 node_modules
 test-ledger
