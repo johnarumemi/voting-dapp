@@ -22,46 +22,45 @@ const votingAddress = new PublicKey("6ShErK8BErTwj4Wut88kkJVxBiSAXdSmUh3qhFAPzai
 // testing framework to test our smart contracts.
 describe('Voting', () => {
 
-    it('Initialise Poll', async () => {
+    let context;
+    let provider: BankrunProvider;
+    let votingProgram: Program<Votingdapp>;
 
-        const description = "What is your favourte colour?"
+    // This will run before all tests in this suite (once only)
+    beforeAll(async () => {
 
-        let startTime = performance.now();
-        // name must match the Program name. See Anchor.toml file for valid names.
-        const context = await startAnchor("", [{ name: "votingdapp", programId: votingAddress }], []);
-        let duration = performance.now() - startTime;
+        // NOTE: name must match the Program name. See Anchor.toml file for valid names.
+        context = await startAnchor("", [{ name: "votingdapp", programId: votingAddress }], []);
 
-        console.log(`Created context in ${duration} milliseconds`)
+        provider = new BankrunProvider(context);
 
-        startTime = performance.now();
-        const provider = new BankrunProvider(context);
-        duration = performance.now() - startTime;
-        console.log(`Created provider in ${duration} milliseconds`)
-
-        startTime = performance.now();
-        const votingProgram = new Program<Votingdapp>(
+        votingProgram = new Program<Votingdapp>(
             IDL,
             provider,
         );
-        duration = performance.now() - startTime;
-        console.log(`Created voting_app in ${duration} milliseconds`)
 
-        // represent a u65 using BN (Big Number)
-        startTime = performance.now();
+    })
+
+    it('Initialises Poll', async () => {
+
+        const description = "What is your favourte colour?"
+
+        const pollId = 1
+        const pollStart = 0
+        const pollEnd = 1841543877
+
+        // represent a u64 using BN (Big Number)
         const tx = await votingProgram.methods.initialisePoll(
-            new BN(1),
-            new BN(0),
-            new BN(1841543877),
-            "What is your favourte colour?",
+            new BN(pollId),
+            new BN(pollStart),
+            new BN(pollEnd),
+            description,
         )
             // Will call the initialisePoll method on the smart contract
             .rpc();
 
-        duration = performance.now() - startTime;
-        console.log(`poll initialised in ${duration} milliseconds`)
-
         const [poll_address] = PublicKey.findProgramAddressSync(
-            [new BN(1).toArrayLike(Buffer, "le", 8)],
+            [new BN(pollId).toArrayLike(Buffer, "le", 8)],
             votingAddress
         );
 
@@ -72,8 +71,54 @@ describe('Voting', () => {
         // get poll address from the program derived address
         console.log('Your transaction signature', tx);
 
-        expect(poll.pollId.toNumber()).toEqual(1)
+        expect(poll.pollId.toNumber()).toEqual(pollId)
+        expect(poll.pollStart.toNumber()).toEqual(pollStart)
+        expect(poll.pollEnd.toNumber()).toEqual(pollEnd)
         expect(poll.pollStart.toNumber()).toBeLessThan(poll.pollEnd.toNumber())
+        expect(poll.description).toEqual(description)
     }, 15000) // 15 seconds
+
+    it("Initialises Candidate", async () => {
+
+        const candidate_name_1 = "Candidate-1"
+        const candidate_name_2 = "Candidate-2"
+
+        const pollId = 1
+
+        const tx1 = await votingProgram.methods.initialiseCandidate(
+            candidate_name_1,
+            new BN(pollId)
+        ).rpc();
+
+        const tx2 = await votingProgram.methods.initialiseCandidate(
+            candidate_name_2,
+            new BN(pollId)
+        ).rpc();
+
+        const [candidate_address_1] = PublicKey.findProgramAddressSync(
+            [new BN(pollId).toArrayLike(Buffer, "le", 8), Buffer.from(candidate_name_1)],
+            votingAddress
+
+        )
+
+        const candidate_1 = await votingProgram.account.candidate.fetch(candidate_address_1)
+
+        const [candidate_address_2] = PublicKey.findProgramAddressSync(
+            [new BN(pollId).toArrayLike(Buffer, "le", 8), Buffer.from(candidate_name_2)],
+            votingAddress
+
+        )
+
+        const candidate_2 = await votingProgram.account.candidate.fetch(candidate_address_2)
+
+        expect
+
+        console.log(`Your transaction signature for candidate1 ${tx1}`);
+        console.log(candidate_1)
+
+        console.log(`Your transaction signature for candidate2 ${tx2}`);
+        console.log(candidate_2)
+
+    }, 15000)
 
 })

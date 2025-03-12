@@ -8,6 +8,90 @@
   },
   "instructions": [
     {
+      "name": "initialise_candidate",
+      "discriminator": [
+        74,
+        22,
+        12,
+        191,
+        166,
+        245,
+        85,
+        189
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The signer",
+            "Accessed via `ctx.accounts.signer`"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "poll",
+          "docs": [
+            "Accesss to the Poll account",
+            "",
+            "This is needed to increment the amount of",
+            "candidates that are within the Poll.",
+            "",
+            "accessed via ctx.accounts.poll",
+            "",
+            "NOTE: we don't need `init` and `space`, since we are not",
+            "creating the Poll, just referencing it."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "path": "poll_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "candidate",
+          "docs": [
+            "The candidate account",
+            "",
+            "accessed via ctx.accounts.candidate"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "path": "poll_id"
+              },
+              {
+                "kind": "arg",
+                "path": "candidate_name"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "NOTE: This is a required field"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "candidate_name",
+          "type": "string"
+        },
+        {
+          "name": "_poll_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "initialise_poll",
       "discriminator": [
         24,
@@ -22,11 +106,21 @@
       "accounts": [
         {
           "name": "signer",
+          "docs": [
+            "The signer of the transaction",
+            "",
+            "Accessed via `ctx.accounts.signer`"
+          ],
           "writable": true,
           "signer": true
         },
         {
           "name": "poll",
+          "docs": [
+            "An account for the poll",
+            "",
+            "Accessed via `ctx.accounts.poll`"
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -67,6 +161,19 @@
   ],
   "accounts": [
     {
+      "name": "Candidate",
+      "discriminator": [
+        86,
+        69,
+        250,
+        96,
+        193,
+        10,
+        222,
+        123
+      ]
+    },
+    {
       "name": "Poll",
       "discriminator": [
         110,
@@ -81,6 +188,22 @@
     }
   ],
   "types": [
+    {
+      "name": "Candidate",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "candidate_name",
+            "type": "string"
+          },
+          {
+            "name": "candidate_votes",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "Poll",
       "type": {

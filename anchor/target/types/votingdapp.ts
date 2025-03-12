@@ -14,6 +14,90 @@ export type Votingdapp = {
   },
   "instructions": [
     {
+      "name": "initialiseCandidate",
+      "discriminator": [
+        74,
+        22,
+        12,
+        191,
+        166,
+        245,
+        85,
+        189
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The signer",
+            "Accessed via `ctx.accounts.signer`"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "poll",
+          "docs": [
+            "Accesss to the Poll account",
+            "",
+            "This is needed to increment the amount of",
+            "candidates that are within the Poll.",
+            "",
+            "accessed via ctx.accounts.poll",
+            "",
+            "NOTE: we don't need `init` and `space`, since we are not",
+            "creating the Poll, just referencing it."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "path": "pollId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "candidate",
+          "docs": [
+            "The candidate account",
+            "",
+            "accessed via ctx.accounts.candidate"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "path": "pollId"
+              },
+              {
+                "kind": "arg",
+                "path": "candidateName"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "docs": [
+            "NOTE: This is a required field"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "candidateName",
+          "type": "string"
+        },
+        {
+          "name": "pollId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "initialisePoll",
       "discriminator": [
         24,
@@ -28,11 +112,21 @@ export type Votingdapp = {
       "accounts": [
         {
           "name": "signer",
+          "docs": [
+            "The signer of the transaction",
+            "",
+            "Accessed via `ctx.accounts.signer`"
+          ],
           "writable": true,
           "signer": true
         },
         {
           "name": "poll",
+          "docs": [
+            "An account for the poll",
+            "",
+            "Accessed via `ctx.accounts.poll`"
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -73,6 +167,19 @@ export type Votingdapp = {
   ],
   "accounts": [
     {
+      "name": "candidate",
+      "discriminator": [
+        86,
+        69,
+        250,
+        96,
+        193,
+        10,
+        222,
+        123
+      ]
+    },
+    {
       "name": "poll",
       "discriminator": [
         110,
@@ -87,6 +194,22 @@ export type Votingdapp = {
     }
   ],
   "types": [
+    {
+      "name": "candidate",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "candidateName",
+            "type": "string"
+          },
+          {
+            "name": "candidateVotes",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "poll",
       "type": {

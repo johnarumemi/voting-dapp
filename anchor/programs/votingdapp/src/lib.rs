@@ -31,18 +31,79 @@ pub mod votingdapp {
         Ok(())
     }
 
-    /// List of accounts
+    pub fn initialise_candidate(
+        ctx: Context<InitialiseCandidate>,
+        candidate_name: String,
+        // not used directly
+        _poll_id: u64,
+    ) -> Result<()> {
+        let candidate = &mut ctx.accounts.candidate;
+        candidate.candidate_name = candidate_name;
+        candidate.candidate_votes = 0;
+        Ok(())
+    }
+
+    /// List of accounts required when initialising a candidate
     #[derive(Accounts)]
-    #[instruction(poll_id: u64)] // pull in the paramer for use in seed
-    pub struct InitialisePoll<'info> {
-        // The signer
-        // Accessed via `ctx.accounts.signer`
+    // NOTE: These must be in the same order as function signature
+    #[instruction(candidate_name: String, poll_id: u64 )]
+    pub struct InitialiseCandidate<'info> {
+        /// The signer
+        /// Accessed via `ctx.accounts.signer`
         #[account(mut)] // we are getting money from the singer
         pub signer: Signer<'info>,
 
-        // An account for the poll
-        //
-        // Accessed via `ctx.accounts.poll`
+        /// Accesss to the Poll account
+        ///
+        /// This is needed to increment the amount of
+        /// candidates that are within the Poll.
+        ///
+        /// accessed via ctx.accounts.poll
+        ///
+        /// NOTE: we don't need `init` and `space`, since we are not
+        /// creating the Poll, just referencing it.
+        #[account(
+            seeds = [poll_id.to_le_bytes().as_ref()],
+            bump // required field
+        )]
+        pub poll: Account<'info, Poll>,
+
+        /// The candidate account
+        ///
+        /// accessed via ctx.accounts.candidate
+        #[account(
+            init_if_needed,
+            payer = signer,
+            space = ANCHOR_DISCRIMINATOR + Candidate::INIT_SPACE,
+            seeds = [poll_id.to_le_bytes().as_ref(), candidate_name.as_bytes()],
+            bump // required field
+        )]
+        pub candidate: Account<'info, Candidate>,
+
+        /// NOTE: This is a required field
+        pub system_program: Program<'info, System>, // a program of type System.
+    }
+
+    #[account]
+    #[derive(InitSpace)]
+    pub struct Candidate {
+        #[max_len(32)]
+        pub candidate_name: String,
+        pub candidate_votes: u64,
+    }
+    /// List of accounts required when initialising a poll
+    #[derive(Accounts)]
+    #[instruction(poll_id: u64)] // pull in the paramer for use in seed
+    pub struct InitialisePoll<'info> {
+        /// The signer of the transaction
+        ///
+        /// Accessed via `ctx.accounts.signer`
+        #[account(mut)] // we are getting money from the singer
+        pub signer: Signer<'info>,
+
+        /// An account for the poll
+        ///
+        /// Accessed via `ctx.accounts.poll`
         #[account(
             init_if_needed,
             payer = signer,
