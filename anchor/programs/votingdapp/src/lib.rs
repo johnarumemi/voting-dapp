@@ -40,7 +40,52 @@ pub mod votingdapp {
         let candidate = &mut ctx.accounts.candidate;
         candidate.candidate_name = candidate_name;
         candidate.candidate_votes = 0;
+
+        let poll = &mut ctx.accounts.poll;
+        poll.candidate_amount += 1;
         Ok(())
+    }
+    pub fn vote(ctx: Context<Vote>, _candidate_name: String, _poll_id: u64) -> Result<()> {
+        let candidate = &mut ctx.accounts.candidate;
+
+        msg!(
+            "Voting for candidate: {} with {} votes atm",
+            candidate.candidate_name,
+            candidate.candidate_votes
+        );
+
+        candidate.candidate_votes += 1;
+
+        msg!(
+            "Voted for candidate: {} with {} votes now held",
+            candidate.candidate_name,
+            candidate.candidate_votes
+        );
+        Ok(())
+    }
+
+    /// List of accounts required when voting
+    #[derive(Accounts)]
+    #[instruction(candidate_name: String, poll_id: u64)]
+    pub struct Vote<'info> {
+        /// The signer
+        ///
+        /// Person who is signing the transaction and asking to vote,
+        /// should be the signer of the transaction.
+        pub signer: Signer<'info>,
+
+        /// Access candidate account
+        ///
+        /// We need to access the candidate so that we can increment their number of votes
+        #[account(
+            mut, // we are mutating this account, so we need to specify this attribute
+            seeds = [poll_id.to_le_bytes().as_ref(), candidate_name.as_bytes()],
+            bump // required field
+        )]
+        pub candidate: Account<'info, Candidate>,
+        // NOTE: no accounts are being created, so the system program is not needed.
+        //
+        // pub system_program: Program<'info, System>,
     }
 
     /// List of accounts required when initialising a candidate
@@ -63,6 +108,7 @@ pub mod votingdapp {
         /// NOTE: we don't need `init` and `space`, since we are not
         /// creating the Poll, just referencing it.
         #[account(
+            mut,
             seeds = [poll_id.to_le_bytes().as_ref()],
             bump // required field
         )]
@@ -75,12 +121,12 @@ pub mod votingdapp {
             init_if_needed,
             payer = signer,
             space = ANCHOR_DISCRIMINATOR + Candidate::INIT_SPACE,
-            seeds = [poll_id.to_le_bytes().as_ref(), candidate_name.as_bytes()],
+            seeds = [poll_id.to_le_bytes().as_ref(), candidate_name.to_lowercase().as_bytes()],
             bump // required field
         )]
         pub candidate: Account<'info, Candidate>,
 
-        /// NOTE: This is a required field
+        /// NOTE: This is a required field when accounts are being created
         pub system_program: Program<'info, System>, // a program of type System.
     }
 
@@ -113,7 +159,7 @@ pub mod votingdapp {
         )]
         pub poll: Account<'info, Poll>,
 
-        /// NOTE: This is a required field
+        /// NOTE: This is a required field when accounts are being created
         pub system_program: Program<'info, System>, // a program of type System.
     }
 

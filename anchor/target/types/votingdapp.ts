@@ -48,6 +48,7 @@ export type Votingdapp = {
             "NOTE: we don't need `init` and `space`, since we are not",
             "creating the Poll, just referencing it."
           ],
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -81,7 +82,7 @@ export type Votingdapp = {
         {
           "name": "systemProgram",
           "docs": [
-            "NOTE: This is a required field"
+            "NOTE: This is a required field when accounts are being created"
           ],
           "address": "11111111111111111111111111111111"
         }
@@ -140,7 +141,7 @@ export type Votingdapp = {
         {
           "name": "systemProgram",
           "docs": [
-            "NOTE: This is a required field"
+            "NOTE: This is a required field when accounts are being created"
           ],
           "address": "11111111111111111111111111111111"
         }
@@ -161,6 +162,62 @@ export type Votingdapp = {
         {
           "name": "description",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "vote",
+      "discriminator": [
+        227,
+        110,
+        155,
+        23,
+        136,
+        126,
+        172,
+        25
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The signer",
+            "",
+            "Person who is signing the transaction and asking to vote,",
+            "should be the signer of the transaction."
+          ],
+          "signer": true
+        },
+        {
+          "name": "candidate",
+          "docs": [
+            "Access candidate account",
+            "",
+            "We need to access the candidate so that we can increment their number of votes"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "path": "pollId"
+              },
+              {
+                "kind": "arg",
+                "path": "candidateName"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "candidateName",
+          "type": "string"
+        },
+        {
+          "name": "pollId",
+          "type": "u64"
         }
       ]
     }
